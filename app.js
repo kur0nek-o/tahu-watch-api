@@ -11,7 +11,10 @@ app.use(cors())
 app.use(express.json())
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+  res.send({
+    status: true,
+    message: 'Ini backend server API',
+  })
 })
 
 app.listen(PORT, () => {
