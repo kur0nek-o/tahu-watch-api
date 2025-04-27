@@ -5,16 +5,16 @@ export default [
     files: ['**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
-      sourceType: 'module',
+      sourceType: 'module'
     },
     plugins: {
-      prettier: eslintPluginPrettier,
+      prettier: eslintPluginPrettier
     },
     rules: {
       'prettier/prettier': 'error',
       'no-unused-vars': 'warn',
       'no-console': 'off',
-      semi: ['error', 'never'],
-    },
-  },
+      semi: ['error', 'never']
+    }
+  }
 ]
