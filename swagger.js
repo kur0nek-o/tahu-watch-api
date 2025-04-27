@@ -13,7 +13,17 @@ const options = {
       {
         url: process.env.BASE_URL
       }
-    ]
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    },
+    security: [{ bearerAuth: [] }]
   },
   apis: ['./src/routes/*.js']
 }

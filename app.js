@@ -6,6 +6,10 @@ import authRoutes from './src/routes/authRoutes.js'
 import protectedRoutes from './src/routes/protectedRoutes.js'
 import { swaggerSpec, swaggerUi } from './swagger.js'
 
+// CDN CSS
+
+const CSS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css'
+
 dotenv.config()
 
 const app = express()
@@ -17,7 +21,7 @@ app.use(express.json())
 app.use('/api/auth', authRoutes)
 app.use('/api/protected', protectedRoutes)
 
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customCssUrl: CSS_URL }))
 
 mongoose
   .connect(process.env.MONGO_URI)
