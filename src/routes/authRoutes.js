@@ -1,65 +1,24 @@
 import express from 'express'
+import RefreshToken from '../models/RefreshToken.js'
+
 import { login, register } from '../controllers/authController.js'
 
 const router = express.Router()
 
-/**
- * @swagger
- * /api/auth/register:
- *   post:
- *     summary: Register a new user
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - username
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *               username:
- *                 type: string
- *               password:
- *                 type: string
- *     responses:
- *       201:
- *         description: User created successfully
- *       400:
- *         description: User already exists
- */
 router.post('/register', register)
-
-/**
- * @swagger
- * /api/auth/login:
- *   post:
- *     summary: Login user
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - username
- *               - password
- *             properties:
- *               username:
- *                 type: string
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Successful login
- *       400:
- *         description: Invalid credentials
- */
 router.post('/login', login)
+
+// router.post('/refresh-token', )
+
+router.post('/logout', async (req, res) => {
+  const token = req.body.refreshToken
+
+  if (token) {
+    await RefreshToken.findOneAndDelete({ token })
+  }
+
+  res.clearCookie('accessToken')
+  res.status(200).json({ message: 'Logged out' })
+})
 
 export default router

@@ -1,23 +1,33 @@
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+
+import RefreshToken from '../models/RefreshToken.js'
 import User from '../models/User.js'
+
+import { signAccessToken, signRefreshToken } from '../utils/jwt.js'
 
 export const register = async (req, res) => {
   const { email, username, password } = req.body
+
   try {
     const existingUser = await User.findOne({ email, username })
 
-    if (existingUser) return res.status(400).json({ message: 'User already exists' })
+    if (existingUser) throw new Error('Email atau username sudah terdaftar')
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
     const user = new User({ email, username, password: hashedPassword })
     await user.save()
 
-    res.status(201).json({ message: 'User created successfully' })
+    res.status(200).json({
+      status: true,
+      message: 'Registrasi berhasil'
+    })
   } catch (error) {
     console.error(error)
-    res.status(500).json({ message: 'Something went wrong' })
+    res.status(200).json({
+      status: false,
+      message: 'Terjadi kesalahan saat registrasi, silakan coba lagi'
+    })
   }
 }
 
@@ -27,17 +37,70 @@ export const login = async (req, res) => {
   try {
     const user = await User.findOne({ username })
 
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' })
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new Error('Username atau password salah')
+    }
 
-    const isMatch = await bcrypt.compare(password, user.password)
+    const accessToken = signAccessToken({ userId: user._id })
+    const refreshToken = signRefreshToken({ userId: user._id })
 
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' })
+    await RefreshToken.create({
+      token: refreshToken,
+      user: user._id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    })
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' })
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    })
 
-    res.json({ token })
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    })
+
+    res.status(200).json({
+      status: true,
+      message: 'Login berhasil'
+    })
   } catch (error) {
     console.error(error)
-    res.status(500).json({ message: 'Something went wrong' })
+    res.status(200).json({
+      status: false,
+      message: 'Username atau password salah'
+    })
   }
 }
+
+// export const refreshToken = async (req, res) => {
+//   const token = req.cookies.accessToken
+
+//   if (!token) return res.sendStatus(401)
+
+//     const decoded = verifyAccessToken(token)
+
+//   const stored = await RefreshToken.findOne({ token, revoked: false })
+
+//   if (!stored) return res.sendStatus(403)
+
+//   try {
+//     const payload = verifyRefreshToken(token)
+//     const newAccessToken = signAccessToken({ userId: payload.userId })
+
+//     res.cookie('accessToken', newAccessToken, {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === 'production',
+//       sameSite: 'Strict',
+//       maxAge: 15 * 60 * 1000
+//     })
+
+//     res.status(200).json({ message: 'Access token refreshed' })
+//   } catch (err) {
+//     return res.sendStatus(403)
+//   }
+// }
