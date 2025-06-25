@@ -6,6 +6,7 @@ import mongoose from 'mongoose'
 
 import authRoutes from './src/routes/authRoutes.js'
 import meRoutes from './src/routes/meRoutes.js'
+import reviewRoutes from './src/routes/reviewRoutes.js'
 
 dotenv.config()
 
@@ -23,6 +24,7 @@ app.use(cookieParser())
 
 app.use('/api/auth', authRoutes)
 app.use('/api/verify', meRoutes)
+app.use('/api/', reviewRoutes)
 
 mongoose
   .connect(process.env.MONGO_URI)
