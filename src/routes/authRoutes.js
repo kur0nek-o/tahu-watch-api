@@ -1,24 +1,14 @@
 import express from 'express'
-import RefreshToken from '../models/RefreshToken.js'
 
-import { login, register } from '../controllers/authController.js'
+import { login, logout, refreshToken, register } from '../controllers/authController.js'
+import { validateRequest } from '../middlewares/validateRequest.js'
+import { loginSchema, registerSchema } from '../validators/authValidator.js'
 
 const router = express.Router()
 
-router.post('/register', register)
-router.post('/login', login)
-
-// router.post('/refresh-token', )
-
-router.post('/logout', async (req, res) => {
-  const token = req.body.refreshToken
-
-  if (token) {
-    await RefreshToken.findOneAndDelete({ token })
-  }
-
-  res.clearCookie('accessToken')
-  res.status(200).json({ message: 'Logged out' })
-})
+router.post('/register', validateRequest(registerSchema), register)
+router.post('/login', validateRequest(loginSchema), login)
+router.post('/refresh-token', refreshToken)
+router.post('/logout', logout)
 
 export default router

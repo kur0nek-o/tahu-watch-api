@@ -1,21 +1,35 @@
 import bcrypt from 'bcryptjs'
-
 import RefreshToken from '../models/RefreshToken.js'
 import User from '../models/User.js'
 
-import { signAccessToken, signRefreshToken } from '../utils/jwt.js'
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js'
 
 export const register = async (req, res) => {
-  const { email, username, password } = req.body
-
   try {
-    const existingUser = await User.findOne({ email, username })
+    const { email, username, password } = req.validatedBody
 
-    if (existingUser) throw new Error('Email atau username sudah terdaftar')
+    const emailExists = await User.findOne({ email })
+    const usernameExists = await User.findOne({ username })
+
+    if (emailExists || usernameExists) {
+      const errors = {}
+      if (emailExists) {
+        errors.email = 'Email sudah terdaftar'
+      }
+      if (usernameExists) {
+        errors.username = 'Username sudah terdaftar'
+      }
+
+      return res.status(400).json({
+        status: false,
+        message: 'Email atau username sudah terdaftar',
+        errors
+      })
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10)
-
     const user = new User({ email, username, password: hashedPassword })
+
     await user.save()
 
     res.status(200).json({
@@ -24,15 +38,16 @@ export const register = async (req, res) => {
     })
   } catch (error) {
     console.error(error)
+
     res.status(200).json({
       status: false,
-      message: 'Terjadi kesalahan saat registrasi, silakan coba lagi'
+      message: error.message || 'Terjadi kesalahan saat registrasi'
     })
   }
 }
 
 export const login = async (req, res) => {
-  const { username, password } = req.body
+  const { username, password } = req.validatedBody
 
   try {
     const user = await User.findOne({ username })
@@ -70,37 +85,71 @@ export const login = async (req, res) => {
     })
   } catch (error) {
     console.error(error)
+
     res.status(200).json({
       status: false,
-      message: 'Username atau password salah'
+      message: error.message || 'Terjadi kesalahan saat login'
     })
   }
 }
 
-// export const refreshToken = async (req, res) => {
-//   const token = req.cookies.accessToken
+export const refreshToken = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken
 
-//   if (!token) return res.sendStatus(401)
+  if (!refreshToken) return res.sendStatus(401)
 
-//     const decoded = verifyAccessToken(token)
+  try {
+    const payload = verifyRefreshToken(refreshToken)
 
-//   const stored = await RefreshToken.findOne({ token, revoked: false })
+    const stored = await RefreshToken.findOne({ token: refreshToken, revoked: false })
 
-//   if (!stored) return res.sendStatus(403)
+    if (!stored) throw new Error('Invalid refresh token')
 
-//   try {
-//     const payload = verifyRefreshToken(token)
-//     const newAccessToken = signAccessToken({ userId: payload.userId })
+    if (stored.expires && stored.expires < new Date()) {
+      throw new Error('Refresh token expired')
+    }
 
-//     res.cookie('accessToken', newAccessToken, {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === 'production',
-//       sameSite: 'Strict',
-//       maxAge: 15 * 60 * 1000
-//     })
+    const newAccessToken = signAccessToken({ userId: payload.userId })
 
-//     res.status(200).json({ message: 'Access token refreshed' })
-//   } catch (err) {
-//     return res.sendStatus(403)
-//   }
-// }
+    res.cookie('accessToken', newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    })
+
+    res.status(200).json({
+      status: true,
+      message: 'Access token refreshed'
+    })
+  } catch (err) {
+    console.error('Refresh error:', err.message)
+
+    return res.sendStatus(403)
+  }
+}
+
+export const logout = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken
+
+  if (!refreshToken) return res.sendStatus(401)
+
+  try {
+    await RefreshToken.updateOne({ token: refreshToken }, { revoked: true })
+
+    res.clearCookie('accessToken')
+    res.clearCookie('refreshToken')
+
+    res.status(200).json({
+      status: true,
+      message: 'Logout berhasil'
+    })
+  } catch (error) {
+    console.error(error)
+
+    res.status(200).json({
+      status: false,
+      message: error.message || 'Terjadi kesalahan saat logout'
+    })
+  }
+}

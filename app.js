@@ -5,7 +5,7 @@ import express from 'express'
 import mongoose from 'mongoose'
 
 import authRoutes from './src/routes/authRoutes.js'
-import protectedRoutes from './src/routes/protectedRoutes.js'
+import meRoutes from './src/routes/meRoutes.js'
 
 dotenv.config()
 
@@ -17,7 +17,7 @@ app.use(express.json())
 app.use(cookieParser())
 
 app.use('/api/auth', authRoutes)
-app.use('/api/protected', protectedRoutes)
+app.use('/api/verify', meRoutes)
 
 mongoose
   .connect(process.env.MONGO_URI)

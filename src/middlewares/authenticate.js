@@ -9,8 +9,12 @@ const authenticate = (req, res, next) => {
     const decoded = verifyAccessToken(token)
     req.user = decoded
     next()
-  } catch {
-    return res.sendStatus(403)
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.sendStatus(401)
+    } else {
+      return res.sendStatus(403)
+    }
   }
 }
 
