@@ -47,13 +47,13 @@ export const register = async (req, res) => {
 }
 
 export const login = async (req, res) => {
-  const { username, password } = req.validatedBody
+  const { email, password } = req.validatedBody
 
   try {
-    const user = await User.findOne({ username })
+    const user = await User.findOne({ email })
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new Error('Username atau password salah')
+      throw new Error('Email atau password salah')
     }
 
     const accessToken = signAccessToken({ userId: user._id })
