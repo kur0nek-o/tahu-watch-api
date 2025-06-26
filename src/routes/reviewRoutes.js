@@ -23,6 +23,7 @@ router.get('/reviews', authenticate, async (req, res) => {
       data: reviews
     })
   } catch (err) {
+    console.error(err)
     res.status(500).json({ status: false, message: 'Server error' })
   }
 })
