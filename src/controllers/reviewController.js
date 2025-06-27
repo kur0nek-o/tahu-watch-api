@@ -1,5 +1,7 @@
 import Review from '../models/Review.js'
 
+import { sanitizeHtml } from '../utils/sanitize.js'
+
 export const getAll = async (req, res) => {
   try {
     const userId = req.user.userId
@@ -21,7 +23,11 @@ export const getAll = async (req, res) => {
     }
 
     const skip = (page - 1) * limit
-    const reviews = await Review.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit)
+    const reviews = await Review.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('userId', 'username')
 
     res.json({
       status: true,
@@ -35,6 +41,37 @@ export const getAll = async (req, res) => {
       status: false,
       message: error.message || 'Terjadi kesalahan saat mengambil data review',
       data: []
+    })
+  }
+}
+
+export const getBySlug = async (req, res) => {
+  try {
+    const userId = req.user.userId
+    const slug = req.query.slug
+
+    if (!slug) {
+      throw new Error('Slug tidak ditemukan')
+    }
+
+    const review = await Review.findOne({ slug, userId }).populate('userId', 'username')
+
+    if (!review) {
+      throw new Error('Review tidak ditemukan')
+    }
+
+    res.json({
+      status: true,
+      message: 'Berhasil mengambil data review',
+      data: review
+    })
+  } catch (error) {
+    console.error(error)
+
+    res.status(200).json({
+      status: false,
+      message: error.message || 'Terjadi kesalahan saat mengambil data review',
+      data: null
     })
   }
 }
@@ -66,6 +103,8 @@ export const create = async (req, res) => {
       slug = `${slug}-${randomSuffix}`
     }
 
+    const cleanContent = sanitizeHtml(content)
+
     const review = new Review({
       userId,
       title,
@@ -73,7 +112,7 @@ export const create = async (req, res) => {
       status,
       coverImage,
       description,
-      content,
+      content: cleanContent,
       createdAt: new Date(),
       updatedAt: null
     })
