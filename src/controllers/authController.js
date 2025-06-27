@@ -68,14 +68,14 @@ export const login = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Strict',
       maxAge: 15 * 60 * 1000 // 15 minutes
     })
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     })
 
@@ -114,7 +114,7 @@ export const refreshToken = async (req, res) => {
     res.cookie('accessToken', newAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Strict',
       maxAge: 15 * 60 * 1000 // 15 minutes
     })
 
@@ -137,8 +137,17 @@ export const logout = async (req, res) => {
   try {
     await RefreshToken.updateOne({ token: refreshToken }, { revoked: true })
 
-    res.clearCookie('accessToken')
-    res.clearCookie('refreshToken')
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Strict'
+    })
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'Strict'
+    })
 
     res.status(200).json({
       status: true,
