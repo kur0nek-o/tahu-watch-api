@@ -1,24 +1,29 @@
 import Joi from 'joi'
 
-export const registerSchema = Joi.object({
-  email: Joi.string().email().required().messages({
-    'string.empty': 'Email tidak boleh kosong',
-    'string.email': 'Format email tidak valid',
-    'any.required': 'Email harus diisi'
+export const reviewSchema = Joi.object({
+  title: Joi.string().min(3).max(100).required().messages({
+    'string.empty': 'Judul tidak boleh kosong',
+    'string.min': 'Judul minimal 3 karakter',
+    'string.max': 'Judul maksimal 100 karakter',
+    'any.required': 'Judul harus diisi'
   }),
-  username: Joi.string().min(3).max(30).required().messages({
-    'string.empty': 'Nama pengguna tidak boleh kosong',
-    'string.min': 'Nama pengguna minimal 3 karakter',
-    'string.max': 'Nama pengguna maksimal 30 karakter',
-    'any.required': 'Nama pengguna harus diisi'
+  slug: Joi.string().required().messages({
+    'string.empty': 'Slug tidak boleh kosong',
+    'any.required': 'Slug harus diisi'
   }),
-  password: Joi.string().min(6).required().messages({
-    'string.empty': 'Password tidak boleh kosong',
-    'string.min': 'Password minimal 6 karakter',
-    'any.required': 'Password harus diisi'
+  status: Joi.boolean().required().messages({
+    'any.required': 'Status harus diisi'
   }),
-  confirmPassword: Joi.any().valid(Joi.ref('password')).required().messages({
-    'any.only': 'Konfirmasi password tidak cocok',
-    'any.required': 'Konfirmasi password harus diisi'
-  })
+  coverImage: Joi.string().uri().required().messages({
+    'string.empty': 'Gambar sampul tidak boleh kosong',
+    'string.uri': 'Format URL gambar sampul tidak valid',
+    'any.required': 'Gambar sampul harus diisi'
+  }),
+  description: Joi.string().min(10).max(150).required().messages({
+    'string.empty': 'Deskripsi tidak boleh kosong',
+    'string.min': 'Deskripsi minimal 10 karakter',
+    'string.max': 'Deskripsi maksimal 150 karakter',
+    'any.required': 'Deskripsi harus diisi'
+  }),
+  content: Joi.string().allow('').optional()
 })

@@ -14,6 +14,10 @@ const reviewSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  status: {
+    type: Boolean,
+    required: true
+  },
   coverImage: {
     type: String,
     required: true
@@ -24,7 +28,8 @@ const reviewSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   },
   createdAt: {
     type: Date,

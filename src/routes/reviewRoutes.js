@@ -1,31 +1,13 @@
 import express from 'express'
 import authenticate from '../middlewares/authenticate.js'
-import Review from '../models/Review.js' // Make sure this exists
+
+import { create, getAll } from '../controllers/reviewController.js'
+import { validateRequest } from '../middlewares/validateRequest.js'
+import { reviewSchema } from '../validators/reviewValidator.js'
 
 const router = express.Router()
 
-router.get('/reviews', authenticate, async (req, res) => {
-  try {
-    const { title, status } = req.query
-    const filter = {}
-
-    if (title) {
-      filter.title = { $regex: title, $options: 'i' }
-    }
-    if (status) {
-      filter.status = status
-    }
-
-    const reviews = await Review.find(filter)
-    res.json({
-      status: true,
-      message: 'Reviews fetched successfully',
-      data: reviews
-    })
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ status: false, message: 'Server error' })
-  }
-})
+router.get('/reviews', authenticate, getAll)
+router.post('/review', authenticate, validateRequest(reviewSchema), create)
 
 export default router
