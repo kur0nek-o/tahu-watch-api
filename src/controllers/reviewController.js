@@ -133,3 +133,34 @@ export const create = async (req, res) => {
     })
   }
 }
+
+export const deleteReview = async (req, res) => {
+  try {
+    const userId = req.user.userId
+    const slug = req.query.slug
+
+    if (!slug) {
+      throw new Error('Slug tidak ditemukan')
+    }
+
+    const review = await Review.findOneAndDelete({ slug, userId })
+
+    if (!review) {
+      throw new Error('Review tidak ditemukan')
+    }
+
+    res.json({
+      status: true,
+      message: 'Review berhasil dihapus',
+      data: null
+    })
+  } catch (error) {
+    console.error(error)
+
+    res.status(200).json({
+      status: false,
+      message: error.message || 'Terjadi kesalahan saat menghapus review',
+      data: null
+    })
+  }
+}
