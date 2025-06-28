@@ -134,6 +134,66 @@ export const create = async (req, res) => {
   }
 }
 
+export const edit = async (req, res) => {
+  try {
+    const userId = req.user.userId
+    const { id } = req.query
+
+    const {
+      title,
+      slug: originalSlug,
+      status,
+      coverImage,
+      description,
+      content
+    } = req.validatedBody
+
+    const review = await Review.findOne({ _id: id, userId })
+
+    if (!review) {
+      throw new Error('Review tidak ditemukan')
+    }
+
+    if (typeof status !== 'boolean') {
+      throw new Error('Status tidak valid')
+    }
+
+    const isSlugExists = await Review.findOne({ slug: originalSlug, userId })
+
+    let slug = originalSlug
+
+    if (isSlugExists) {
+      const randomSuffix = Math.random().toString(36).substring(2, 7)
+
+      slug = `${slug}-${randomSuffix}`
+    }
+
+    review.title = title
+    review.slug = slug
+    review.status = status
+    review.coverImage = coverImage
+    review.description = description
+    review.content = sanitizeHtml(content)
+    review.updatedAt = new Date()
+
+    await review.save()
+
+    res.json({
+      status: true,
+      message: 'Review berhasil diperbarui',
+      data: review
+    })
+  } catch (error) {
+    console.error(error)
+
+    res.status(200).json({
+      status: false,
+      message: error.message || 'Terjadi kesalahan saat memperbarui review',
+      data: null
+    })
+  }
+}
+
 export const deleteReview = async (req, res) => {
   try {
     const userId = req.user.userId
